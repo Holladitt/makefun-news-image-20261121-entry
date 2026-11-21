@@ -36,6 +36,20 @@ CREAM = (255, 248, 225)
 WHITE = (255, 255, 255)
 GREY = (120, 114, 100)
 LINE = (26, 23, 18)
+MAP_SEA = (29, 45, 74)
+MAP_LAND = (232, 214, 170)
+
+# one colour per region chip, so the strip scans at a glance (top entries
+# colour-code theirs instead of one flat navy)
+REGION_COLORS = {
+    "EUROPE": (47, 99, 158),
+    "ASIA": (178, 39, 30),
+    "MIDDLE EAST": (150, 110, 30),
+    "AFRICA": (46, 125, 50),
+    "AMERICAS": (110, 70, 140),
+    "OCEANIA": (23, 120, 110),
+    "GLOBAL": (90, 90, 96),
+}
 
 # soft tints behind the ten feature panels
 TINTS = [
@@ -278,7 +292,7 @@ def wrap(font, text, maxw):
 def text_block(cv, fonts, name, size, x, y, text, color, maxw, lh=None):
     """Draw a wrapped block. Returns the y after the last line."""
     f = fonts.get(name, size)
-    lh = lh or int(size * 1.22)
+    lh = lh or int(size * 1.3)  # ink span is ~1.18x size; tighter overlaps descenders
     for line in wrap(f, text, maxw):
         f.draw(cv, x, y, line, color)
         y += lh
@@ -717,12 +731,23 @@ REGIONS = [("EUROPE", 8), ("ASIA", 8), ("MIDDLE EAST", 5), ("AFRICA", 1),
 
 # ---------------------------------------------------------------- layout
 def draw_hero(cv, fonts, x, y, w, hero):
-    pic_h = 112
+    pic_h = 96
     hero["scene"](cv, x, y, w, pic_h)
     cv.rect(x, y + pic_h - 2, w, 2, INK)
     banner(cv, fonts, x + 8, y + 8, w, hero["banner"])
+    # caption strip under the picture: the one fact a viewer at ~300px
+    # across can still read (top entries put this chip inside the picture;
+    # a strip below it never covers the art)
+    cy = y + pic_h
+    cv.rect(x, cy, w, 15, PAPER2)
+    cv.rect(x, cy, 3, 15, RED)
+    f = fonts.get("sans_bold", 10)
+    cap = hero["caption"]
+    while f.width(cap) > w - 14 and len(cap) > 12:
+        cap = cap[:len(cap) - 4] + "..."  # U+2026 is not in fonts.bin; ASCII only
+    f.draw(cv, x + 8, cy + 2, cap, INK)
     # tag
-    ty = y + pic_h + 6
+    ty = cy + 19
     f = fonts.get("sans_bold", 10)
     f.draw(cv, x + 2, ty, hero["tag"], RED)
     # headline, 2 lines max
@@ -731,7 +756,7 @@ def draw_hero(cv, fonts, x, y, w, hero):
     lines = wrap(f, hero["headline"], w - 4)
     for ln in lines[:2]:
         f.draw(cv, x + 2, hy, ln, INK)
-        hy += 22
+        hy += 23
     # deck, 3 lines max
     dy = hy + 2
     f = fonts.get("sans", 12)
@@ -747,34 +772,43 @@ def draw_hero(cv, fonts, x, y, w, hero):
 
 def draw_feature(cv, fonts, x, y, w, feat, tint):
     cv.rect(x, y, w, 172, tint)
-    pic_h = 74
+    pic_h = 76
     feat["scene"](cv, x + 4, y + 4, w - 8, pic_h)
     cv.rect(x + 4, y + 4 + pic_h - 2, w - 8, 2, INK)
     banner(cv, fonts, x + 10, y + 10, w, feat["banner"])
-    ty = y + 82
+    ty = y + 84
     f = fonts.get("sans_bold", 9)
     f.draw(cv, x + 6, ty, feat["tag"], RED)
     hy = ty + 12
-    f = fonts.get("serif_bold", 14)
+    f = fonts.get("serif_bold", 15)
     lines = wrap(f, feat["headline"], w - 12)
     for ln in lines[:2]:
         f.draw(cv, x + 6, hy, ln, INK)
-        hy += 16
+        hy += 18
     dy = hy + 1
     f = fonts.get("sans", 11)
     lines = wrap(f, feat["deck"], w - 12)
     for ln in lines[:2]:
         f.draw(cv, x + 6, dy, ln, INK)
-        dy += 13
+        dy += 14
     f = fonts.get("sans_bold", 8)
     f.draw(cv, x + 6, dy + 1, feat["source"], INK_SOFT)
     return y + 172
 
 # ---------------------------------------------------------------- map + also
 def draw_map(cv, fonts, x, y, w, h):
-    """Stylised world map: pale sea, tan continents, numbered red pins."""
-    cv.rect(x, y, w, h, (198, 220, 234))
-    land = (210, 196, 150)
+    """Stylised world map: dark sea, pale land, big numbered pins.
+
+    v1 used a pale sea with tiny pins that washed out at small sizes;
+    the top entries use a dark sea so the red pins and pale continents
+    read at ~300px across."""
+    cv.rect(x, y, w, h, MAP_SEA)
+    # faint grid
+    for gx in range(x + 20, x + w, 20):
+        cv.vline(gx, y, h, (48, 66, 100), 1)
+    for gy in range(y + 20, y + h, 20):
+        cv.hline(x, gy, w, (48, 66, 100), 1)
+    land = MAP_LAND
     # North America
     cv.ellipse(x + 52, y + 26, 44, 17, land)
     cv.ellipse(x + 78, y + 40, 22, 12, land)
@@ -789,19 +823,20 @@ def draw_map(cv, fonts, x, y, w, h):
     cv.ellipse(x + 258, y + 44, 22, 12, land)
     # Australia
     cv.ellipse(x + 268, y + 86, 14, 8, land)
-    # pins: (story number, px, py)
-    pins = [(1, 183, 28), (2, 188, 50), (3, 80, 68), (4, 170, 16),
-            (5, 206, 36), (6, 52, 30), (7, 246, 26), (8, 258, 56),
+    # pins: (story number, px, py) -- spread slightly so the
+    # Europe/Middle-East cluster does not overlap
+    pins = [(1, 186, 32), (2, 190, 52), (3, 80, 68), (4, 168, 14),
+            (5, 208, 38), (6, 52, 30), (7, 246, 26), (8, 258, 56),
             (9, 270, 84), (10, 118, 16), (11, 38, 36), (12, 282, 92)]
-    f = fonts.get("sans_bold", 8)
+    f = fonts.get("sans_bold", 10)
     for num, px, py in pins:
-        cv.disc(x + px, y + py, 7, RED)
-        cv.ring(x + px, y + py, 7, WHITE, 1)
+        cv.disc(x + px, y + py, 8, RED)
+        cv.ring(x + px, y + py, 8, WHITE, 1)
         tw = f.width(str(num))
-        f.draw(cv, x + px - tw / 2, y + py - 4, str(num), WHITE)
+        f.draw(cv, x + px - tw / 2, y + py - 5, str(num), WHITE)
     # 13 is in orbit, not on the map
     cv.burst(x + w - 16, y + 14, 6, GOLD, 6)
-    f.draw(cv, x + w - 26, y + 24, "13", INK)
+    f.draw(cv, x + w - 26, y + 24, "13", WHITE)
 
 
 def draw_also(cv, fonts, x, y, w, h):
@@ -811,9 +846,11 @@ def draw_also(cv, fonts, x, y, w, h):
     cv.hline(x, y, w, INK, 2)
     y += 6
     col_w = (w - 8) // 2
+    # 10px keeps 18/22 items whole (11px truncated 15/22); lh 13 clears
+    # the 11.8px ink span
     f_bold = fonts.get("sans_bold", 10)
     f_reg = fonts.get("sans", 10)
-    lh = 11
+    lh = 13
     for i, (num, place, text, src) in enumerate(ALSO):
         col = 0 if i < 11 else 1
         row = i if i < 11 else i - 11
@@ -826,7 +863,7 @@ def draw_also(cv, fonts, x, y, w, h):
         rest = text + " (" + src + ")"
         # shrink the rest if it would overflow the column
         while f_reg.width(rest) > col_w - lead_w and len(rest) > 12:
-            rest = rest[:len(rest) - 4] + "\u2026"
+            rest = rest[:len(rest) - 4] + "..."  # U+2026 is not in fonts.bin
         f_reg.draw(cv, cx + lead_w, cy, rest, INK)
 
 
@@ -848,47 +885,48 @@ def draw():
     cv.hline(14, 28, W - 28, INK, 2)
 
     # ---- masthead
-    f = fonts.get("serif_bold", 56)
+    f = fonts.get("serif_bold", 48)
     title = "Saturday 21 November 2026"
-    f.draw(cv, (W - f.width(title)) / 2, 34, title, INK)
+    f.draw(cv, (W - f.width(title)) / 2, 30, title, INK)
     f = fonts.get("serif_italic", 15)
     kicker = ("Climate summit runs past its deadline \u00b7 Five missiles shot down "
               "over Saudi Arabia \u00b7 Strong quake shakes Peru")
-    f.draw(cv, (W - f.width(kicker)) / 2, 98, kicker, INK_SOFT)
-    cv.hline(14, 120, W - 28, INK, 1)
+    f.draw(cv, (W - f.width(kicker)) / 2, 86, kicker, INK_SOFT)
+    cv.hline(14, 106, W - 28, INK, 1)
 
-    # ---- stat strip
-    sy = 128
+    # ---- stat strip (bigger numerals, labels capped at 2 lines)
+    sy = 114
     bw = (W - 28 - 5 * 5) // 6
     for i, (num, label) in enumerate(STATS):
         bx = 14 + i * (bw + 5)
-        cv.rect(bx, sy, bw, 50, PAPER2)
+        cv.rect(bx, sy, bw, 54, PAPER2)
         cv.rect(bx, sy, bw, 3, RED)
-        f = fonts.get("serif_bold", 24)
-        f.draw(cv, bx + 8, sy + 6, num, INK)
+        f = fonts.get("serif_bold", 27)
+        f.draw(cv, bx + 8, sy + 4, num, INK)
         f = fonts.get("sans_bold", 8)
-        for j, ln in enumerate(wrap(f, label, bw - 16)):
-            f.draw(cv, bx + 8, sy + 32 + j * 10, ln, INK_SOFT)
+        for j, ln in enumerate(wrap(f, label, bw - 16)[:2]):
+            f.draw(cv, bx + 8, sy + 32 + j * 11, ln, INK_SOFT)
     # ---- region strip
-    ry = sy + 58
+    ry = sy + 60
     f = fonts.get("sans_bold", 10)
     f.draw(cv, 14, ry, "7 REGIONS:", INK)
     rx = int(14 + f.width("7 REGIONS: ") + 4)
     for name, count in REGIONS:
         chip = f"{name} {count}"
         cw = int(f.width(chip)) + 12
-        cv.rect(rx, ry - 2, cw, 16, NAVY)
+        cv.rect(rx, ry - 2, cw, 16, REGION_COLORS.get(name, NAVY))
         f.draw(cv, rx + 6, ry + 1, chip, WHITE)
         rx += cw + 6
     cv.hline(14, ry + 20, W - 28, INK, 1)
 
     # ---- heroes
-    hy = ry + 28
+    hy = ry + 26
     hw = (W - 28 - 2 * 15) // 3
+    hero_end = hy
     for i, hero in enumerate(HEROES):
-        draw_hero(cv, fonts, 14 + i * (hw + 15), hy, hw, hero)
+        hero_end = max(hero_end, draw_hero(cv, fonts, 14 + i * (hw + 15), hy, hw, hero))
     # ---- features
-    fy = hy + 254
+    fy = hero_end + 4
     fw = (W - 28 - 4 * 8) // 5
     for i, feat in enumerate(FEATURES):
         row, col = divmod(i, 5)
@@ -896,38 +934,38 @@ def draw():
                      fw, feat, TINTS[i])
 
     # ---- map + ALSO
-    my = fy + 2 * 172 + 6
+    my = fy + 2 * 172 + 4
     f = fonts.get("sans_bold", 11)
     f.draw(cv, 14, my, "WHERE IT HAPPENED", INK)
-    draw_map(cv, fonts, 14, my + 16, 300, 100)
+    draw_map(cv, fonts, 14, my + 16, 300, 108)
     f = fonts.get("sans", 9)
-    f.draw(cv, 14, my + 120, "Each number is the story with that number on this page.", INK_SOFT)
-    f.draw(cv, 14, my + 131, "13 is in orbit, not on the map.", INK_SOFT)
+    f.draw(cv, 14, my + 126, "Each number is the story with that number on this page.", INK_SOFT)
+    f.draw(cv, 14, my + 138, "13 is in orbit, not on the map.", INK_SOFT)
     draw_also(cv, fonts, 330, my, W - 330 - 14, 150)
 
     # ---- DATE CHECK
-    dy = my + 146
+    dy = my + 180
     cv.rect(14, dy, W - 28, 42, (255, 250, 230))
     cv.rect(14, dy, 4, 42, RED)
     f = fonts.get("sans_bold", 11)
-    f.draw(cv, 26, dy + 4, "DATE CHECK \u2014 WHAT WAS LEFT OUT", RED)
+    f.draw(cv, 26, dy + 3, "DATE CHECK \u2014 WHAT WAS LEFT OUT", RED)
     f = fonts.get("sans", 11)
     dc = ("Left out as Friday 20 November's news: Wall Street's fall into a correction, "
           "the 111-missile barrage that hit Kyiv's three bridges, the missile that landed "
           "in Poland, the UK\u2013EU deal and Cyclone Akvan's landfall. Older still: Voyager 1's "
           "light-day (18 Nov). Everything here happened, or was first reported, "
           "on Saturday 21 November 2026.")
-    yy = dy + 16
+    yy = dy + 14
     for ln in wrap(f, dc, W - 28 - 24):
         f.draw(cv, 26, yy, ln, INK)
-        yy += 12
+        yy += 14
 
     # ---- footer
     f = fonts.get("sans", 9)
     foot = ("Every story here happened, or was first reported, on Saturday 21 November 2026. "
             "Officials' counts and claims are attributed. \u00b7 Sources named beside each story "
             "\u00b7 Original drawings")
-    f.draw(cv, (W - f.width(foot)) / 2, dy + 48, foot, INK_SOFT)
+    return cv
     return cv
 
 
