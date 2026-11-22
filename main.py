@@ -1,7 +1,8 @@
-# news-image-20261121 v6 — pure-stdlib broadsheet renderer.
+# news-image-20261121 v9 — pure-stdlib broadsheet renderer.
 # A real serif broadsheet: vector serif font (authored below), cream paper,
-# top-1 anatomy. Writes ONE image to /output/entry.png, 1024x1024, <=1 MiB,
-# byte-identical across runs, no network, stdlib only.
+# Reference A design (Adit's new layout) + top-1 anatomy. Writes ONE image
+# to /output/entry.png, 1024x1024, <=1 MiB, byte-identical across runs,
+# no network, stdlib only.
 import math, os, struct, sys, zlib
 
 W, H = 1024, 1024
@@ -543,38 +544,38 @@ def main():
     cv = Canvas(W, H, CREAM)
     X0, X1 = 14, 1010
 
-    # top strip
-    draw_text(cv, X0, 18, "THE WORLD IN ONE DAY", 10, INK)
-    draw_text(cv, 512, 18, "DAY 325 OF 2026", 10, RED, align="center")
-    draw_text(cv, X1, 18, "ALL TIMES UTC", 10, INK, align="right")
+    # top strip (Reference A)
+    draw_text(cv, X0, 18, "THE WORLD IN ONE DAY · EVERY STORY FROM THIS "
+              "DAY, IN ANY TIME ZONE", 10, INK)
+    draw_text(cv, X1, 18, "37 STORIES · 9 REGIONS · 16 FIELDS", 10, RED,
+              align="right")
     cv.hline(X0, X1, 24, INK, 2)
 
-    # masthead
-    draw_fit(cv, "Saturday 21 November 2026", X0, X1, 98, 76, INK)
+    # masthead — v8 font untouched; red date box at the right (Reference A)
+    draw_fit(cv, "Saturday 21 November 2026", X0, X1 - 150, 98, 76, INK)
+    cv.rect(X1 - 138, 38, X1, 104, RED)
+    draw_text(cv, X1 - 69, 70, "SAT 21", 20, (255, 255, 255), align="center")
+    draw_text(cv, X1 - 69, 94, "NOV", 20, (255, 255, 255), align="center")
     cv.hline(X0, X1, 112, INK, 2)
 
-    # sub-line
-    draw_text(cv, 512, 134, "37 STORIES, 9 REGIONS. EVERY ONE DATED "
-              "SATURDAY 21 NOVEMBER 2026", 13, RED, align="center")
+    # tagline (Reference A)
+    draw_fit(cv, "Iran strikes Bahrain · Mexico captures 'El Chapo Isidro' "
+             "· COP31 talks run into overtime", X0, X1, 134, 15, INK,
+             shear=0.18)
     cv.hline(X0, X1, 142, INK, 1)
 
-    # tagline
-    draw_fit(cv, "Iran strikes Bahrain as tankers hit in Hormuz ◆ Drones "
-             "set Russian cargo ship ablaze off Finland ◆ COP31 deadlocked "
-             "over fossil fuels in overtime", X0, X1, 156, 15, INK, shear=0.18)
-
-    # ---- timeline: THE DAY IN UTC
-    cv.rect(X0, 164, X0 + 108, 180, INK)
-    draw_text(cv, X0 + 54, 176, "THE DAY IN UTC", 10, (255, 255, 255), align="center")
+    # ---- timeline: THE DAY IN UTC (label box sits on the axis row so the
+    # 00:09 pin label above it stays clear of the box)
+    cv.rect(X0, 192, X0 + 108, 208, INK)
+    draw_text(cv, X0 + 54, 204, "THE DAY IN UTC", 10, (255, 255, 255), align="center")
     ax0, ax1, ay = X0 + 118, X1 - 4, 200
     cv.hline(ax0, ax1, ay, INK, 2)
-    pins = [(0.15, "00:09 · M6.7 quake, Junin, Peru", True),
-            (4.0, "04:00 · Geneva talks end", False),
-            (6.83, "06:50 · Sparta II hit", True),
-            (9.7, "09:42 · Banda Sea M6.8", False),
-            (12.2, "12:12 · EU–Indonesia signing", True),
-            (18.4, "18:24 · BepiColombo in orbit", True),
-            (22.0, "22:00 · COP31 pause", False)]
+    pins = [(0.15, "00:09 · Peru M6.7 quake", True),
+            (2.0, "02:00 · Sinaloa gunfight", False),
+            (5.0, "05:00 · Tanker hit, Hormuz", True),
+            (18.4, "18:24 · Mercury burn", True),
+            (19.7, "Evening · Bahrain site ablaze", False),
+            (22.0, "Night · COP31 goes on", True)]
     for hr, label, above in pins:
         px = ax0 + hr / 24 * (ax1 - ax0)
         cv.circle(px, ay, 4, RED)
@@ -583,49 +584,49 @@ def main():
         cv.line(px, ay - 6, px, ay + 6, RED, 2)
 
     # ---- numbers strip
-    nums = [("2", "tankers attacked off Khasab (UKMTO)"),
-            ("130+", "countries want fossil fuels named at COP31 (AFP)"),
-            ("730m", "people in the new EU–Indonesia trade area (EU)"),
-            ("128", "states at the Geneva autonomous-weapons talks (UN)"),
-            ("$5m", "FBI reward that stood on 'El Chapo Isidro' (FBI)"),
-            ("8 yrs", "BepiColombo's journey from Earth to Mercury (ESA)")]
+    nums = [("6.7", "quake magnitude, 108 km under central Peru (USGS)"),
+            ("11", "killed in Sinaloa as 'El Chapo Isidro' is caught (AP)"),
+            ("$55,100", "Bitcoin's low, lowest since September 2024 (COINBASE)"),
+            ("82,500", "marched in France over living costs (ministry)"),
+            ("128", "states in Geneva agree to work on AI-weapon rules (UN)")]
     ny = 228
     for i, (n, lab) in enumerate(nums):
-        cx = X0 + i * 166
+        cx = X0 + i * 199
         if i:
             cv.vline(cx, ny, ny + 46, (200, 192, 176), 1)
-        draw_text(cv, cx + 83, ny + 24, n, 26, INK, align="center")
-        for j, ln in enumerate(wrap_text(lab, 10, 158)):
-            draw_text(cv, cx + 83, ny + 38 + j * 11, ln, 10, (90, 80, 66),
+        draw_text(cv, cx + 99, ny + 24, n, 26, INK, align="center")
+        for j, ln in enumerate(wrap_text(lab, 10, 188)):
+            draw_text(cv, cx + 99, ny + 38 + j * 11, ln, 10, (90, 80, 66),
                       align="center")
 
-    # ---- region bar
+    # ---- region bar (Reference A: 9 named regions, equal segments)
     cv.rect(X0, 282, X0 + 136, 298, INK)
     draw_text(cv, X0 + 68, 294, "STORIES BY REGION", 10, (255, 255, 255), align="center")
-    regs = [("Europe", 9), ("Middle East", 6), ("Americas", 4), ("Africa", 3),
-            ("South Asia", 3), ("East Asia", 3), ("SE Asia", 3), ("Oceania", 3),
-            ("Global", 3)]
+    regs = [("EUROPE", "Europe"), ("MID. EAST", "Middle East"),
+            ("S. ASIA", "South Asia"), ("E. ASIA", "East Asia"),
+            ("SE ASIA", "SE Asia"), ("AFRICA", "Africa"),
+            ("N. AMERICA", "N. America"), ("LATIN AM.", "Latin Am."),
+            ("OCEANIA", "Oceania")]
     rx = X0 + 136
-    tot = X1 - rx
-    for name, cnt in regs:
-        w = cnt / 37 * tot
-        cv.rect(rx, 282, min(rx + w, X1), 298, REG_COL[name])
-        draw_text(cv, rx + w / 2, 294, f"{name} {cnt}", 8, (255, 255, 255),
+    seg = (X1 - rx) / len(regs)
+    for label, key in regs:
+        cv.rect(rx, 282, min(rx + seg, X1), 298, REG_COL[key])
+        draw_text(cv, rx + seg / 2, 294, label, 8, (255, 255, 255),
                   align="center")
-        rx += w
+        rx += seg
 
     # ---- lead trio
     leads = [
-        (draw_bahrain, "1", "BAHRAIN / HORMUZ · CONFLICT", "Middle East",
-         "CONFIRMED", "Iran strikes Bahrain as tankers hit in Hormuz",
-         "Bahrain says Iran struck it; two tankers hit off Khasab, "
-         "UKMTO reports. (AP, REUTERS)"),
-        (draw_sparta, "2", "GULF OF FINLAND · AT SEA", "Europe", "OFFICIAL",
-         "Drones set Russian cargo ship ablaze off Finland",
-         "Two drones hit the Russian cargo ship; 16 crew evacuated, "
-         "bound for Kaliningrad. (YLE, AP)"),
-        (draw_cop31, "3", "ANTALYA · CLIMATE", "Global", "REPORTED",
-         "COP31 deadlocked over fossil fuels in overtime",
+        (draw_bahrain, "1", "BAHRAIN / HORMUZ · WAR", "Middle East",
+         "CLAIM", "Bahrain: Iran struck it; tanker hit off Oman",
+         "A site ablaze, Bahrain says; UKMTO: a tanker struck 11 nm off "
+         "Khasab. (BAHRAIN, UKMTO)"),
+        (draw_mexico, "2", "GUASAVE, SINALOA · CRIME", "N. America",
+         "CONFIRMED", "Mexico captures 'El Chapo Isidro'; 11 die",
+         "Troops seize Fausto Isidro Meza Flores; 4 soldiers and 7 gunmen "
+         "killed. (PBS, AL JAZEERA)"),
+        (draw_cop31, "3", "ANTALYA · CLIMATE", "Europe", "CONFIRMED",
+         "COP31 climate talks run into overtime",
          "Talks run past Friday's deadline with no deal; approval "
          "session due Sunday 06:00 GMT. (AFP, AP)"),
     ]
@@ -641,36 +642,36 @@ def main():
 
     # ---- grid 4-13
     cards = [
-        ("flags", "4", "BRUSSELS · TRADE", "Europe", "CONFIRMED",
-         "EU and Indonesia sign trade pact after 10 years",
+        ("quake", "4", "PERU · QUAKE", "Latin Am.", "OFFICIAL",
+         "Deep 6.7 quake shakes Peru",
+         "M6.7, 108 km deep. (USGS)"),
+        ("sparta", "5", "OFF FINLAND · CONFLICT", "Europe", "CONFIRMED",
+         "Drones hit Russian cargo ship",
+         "16 crew evacuated. (YLE, AP)"),
+        ("robot", "6", "GENEVA · ARMS", "Europe", "CONFIRMED",
+         "Deal to draft killer-robot rules",
+         "128 states; draft by 2028. (DW)"),
+        ("flags", "7", "BRUSSELS · TRADE", "Europe", "CONFIRMED",
+         "EU and Indonesia sign trade pact",
          "Lifts 98.5% of tariffs. (DW, ANTARA)"),
-        ("wanted", "5", "SINALOA · CARTELS", "Americas", "OFFICIAL",
-         "Mexico seizes 'El Chapo Isidro' in army raid",
-         "FBI most-wanted; 11 dead. (GUARDIAN)"),
-        ("robot", "6", "GENEVA · ARMS", "Global", "REPORTED",
-         "UN 'killer robot' talks end with no treaty",
-         "128 states, two more years. (DW, NPR)"),
-        ("mercury", "7", "SPACE · MERCURY", "Global", "OFFICIAL",
-         "BepiColombo enters orbit around Mercury",
-         "8 years out; 37-minute burn. (ESA, AP)"),
-        ("boat", "8", "BAYELSA · NIGERIA", "Africa", "REPORTED",
-         "Nigeria funeral boat toll reaches 24",
-         "Capsized Fri; toll given Sat. (DW, AP)"),
-        ("quake", "9", "BANDA SEA · QUAKES", "SE Asia", "OFFICIAL",
-         "Deep quake shakes Timor-Leste and Darwin",
-         "122 km deep off Lospalos. (USGS)"),
-        ("bottle", "10", "MANIPUR · INDIA", "South Asia", "REPORTED",
-         "Tainted alcohol kills 11 in India's Manipur",
-         "More than 180 in hospital. (REUTERS)"),
-        ("rugby", "11", "LONDON · RUGBY", "Europe", "OFFICIAL",
-         "England beat All Blacks by record margin",
-         "37–12, biggest win over NZ. (BBC)"),
-        ("trophy", "12", "OSAKA · MUSIC", "East Asia", "OFFICIAL",
-         "BTS take five MAMA awards, two grand prizes",
-         "Album of Year 'Arirang'. (YONHAP)"),
-        ("march", "13", "PARIS · PROTESTS", "Europe", "REPORTED",
-         "Sixth Saturday of cost-of-living marches",
-         "82,500 marchers, ministry. (AFP)"),
+        ("bitcoin", "8", "CRYPTO · BITCOIN", "N. America", "CONFIRMED",
+         "Bitcoin dives, then rebounds",
+         "Low $55,100; rebounded. (COINBASE)"),
+        ("mercury", "9", "SPACE · MERCURY", "Europe", "OFFICIAL",
+         "Mercury probe fires its orbit burn",
+         "BepiColombo's 37-minute burn. (ESA)"),
+        ("fire", "10", "BASRA · FIRE", "Middle East", "CONFIRMED",
+         "Power-plant fire kills 4 in Basra",
+         "Hartha station blaze; 30 hurt. (REUTERS)"),
+        ("dengue", "11", "BRAZIL · HEALTH", "Latin Am.", "REPORTED",
+         "Trial: mosquitoes cut dengue 69%",
+         "Wolbachia trial, 5,700 children. (AP)"),
+        ("jets", "12", "TAIWAN · MILITARY", "East Asia", "OFFICIAL",
+         "Chinese jets cross the median line",
+         "21 jets; 15 crossed. (TAIWAN MND)"),
+        ("vote", "13", "NIGERIA · SPORT", "Africa", "OFFICIAL",
+         "CAF's 54 nations back Infantino",
+         "All 54 back re-election bid. (CAF)"),
     ]
     for i, (code, num, kick, region, bd, head, body) in enumerate(cards):
         cx = X0 + (i % 5) * 201
@@ -711,12 +712,14 @@ def main():
     draw_text(cv, X0 + 48, 951, "DATE CHECK", 11, (255, 255, 255), align="center")
     draw_text(cv, X0 + 48, 962, "left out on purpose", 7, (255, 255, 255),
               align="center")
-    dc = ("Well-known stories left out: they belong to another day (UTC). "
-          "Fri 20 Nov: Russian missiles land in Poland · Denmark expels "
-          "Russian attaché · Wall Street tech sell-off · GTA VI sales record. "
-          "Sun 22 Nov: Verstappen wins Las Vegas GP · new COP31 draft · "
-          "India declare at 720–9. Not yet: COP31 approval session "
-          "(Sun 06:00 GMT) · Las Vegas GP race (Sun 04:00 UTC).")
+    dc = ("Every story here happened, or was first reported, on Saturday "
+          "21 November 2026 in some time zone; clock times are UTC. Left "
+          "out on purpose: Fri 20 Nov: Russian missiles land in Poland · "
+          "Denmark expels Russian attaché · Wall Street tech sell-off · "
+          "GTA VI sales record. Sun 22 Nov: Verstappen wins Las Vegas GP · "
+          "new COP31 draft · India declare at 720–9. Not yet: COP31 "
+          "approval session (Sun 06:00 GMT) · Las Vegas GP race "
+          "(Sun 04:00 UTC).")
     for j, ln in enumerate(wrap_text(dc, 10, X1 - X0 - 110)):
         draw_text(cv, X0 + 106, 944 + j * 12, ln, 10, INK)
 
@@ -726,9 +729,9 @@ def main():
               "record, agency, ministry, federation  ○ REPORTED one major "
               "outlet  ◇ CLAIM one side says", 9, (90, 80, 66))
     draw_text(cv, 512, 996,
-              "Every story here happened or was first reported on Saturday "
-              "21 November 2026 (UTC), told as the named outlets reported "
-              "it. All maps and drawings are original vector work.",
+              "Pictures and map drawn in code · claims attributed · figures "
+              "as first reported. Sources: USGS, UKMTO, AFP, Reuters, AP, "
+              "BBC, PBS, Al Jazeera, DW, ESA, CAF, Taiwan MND, Coinbase",
               9, (90, 80, 66), align="center")
     cv.hline(X0, X1, 1004, INK, 2)
 
@@ -739,10 +742,10 @@ def main():
 
 # ------------------------------------------------------- layout helpers
 REG_COL = {"Europe": (46, 90, 136), "Middle East": (178, 32, 26),
-           "Americas": (46, 122, 110), "Africa": (122, 74, 140),
+           "N. America": (46, 122, 110), "Latin Am.": (198, 96, 58),
+           "Africa": (122, 74, 140),
            "South Asia": (196, 106, 27), "East Asia": (62, 122, 62),
-           "SE Asia": (140, 106, 62), "Oceania": (196, 90, 140),
-           "Global": (102, 102, 102)}
+           "SE Asia": (140, 106, 62), "Oceania": (196, 90, 140)}
 BADGE_COL = {"CONFIRMED": (46, 122, 62), "OFFICIAL": (46, 90, 136),
              "REPORTED": (120, 114, 100), "CLAIM": (178, 32, 26)}
 
@@ -830,6 +833,46 @@ def draw_bahrain(cv, x0, y0, x1, y1):
     dashed(cv, x0 + 262, y0 + 34, bx + 16, by + 2, RED)
     draw_text(cv, x0 + 196, y0 + 14, "STRAIT OF HORMUZ", 7, (60, 60, 60))
     draw_text(cv, x0 + 8, y0 + 74, "THE GULF", 7, (60, 60, 60))
+    draw_text(cv, x0 + 52, y0 + 64, "SITE ON FIRE", 7, RED)
+    draw_text(cv, x0 + 224, y0 + 48, "TANKER HIT", 7, RED)
+
+def draw_mexico(cv, x0, y0, x1, y1):
+    # Gulf of California (left) + Pacific (bottom-left), Mexico in tan
+    cv.rect(x0, y0, x1, y1, (191, 217, 232))
+    # Baja peninsula (thin strip, west)
+    cv.poly([(x0 + 8, y0 + 6), (x0 + 20, y0 + 4), (x0 + 34, y0 + 40),
+             (x0 + 30, y0 + 52), (x0 + 18, y0 + 44), (x0 + 6, y0 + 18)],
+            (232, 217, 184))
+    # mainland Mexico
+    cv.poly([(x0 + 36, y0 + 8), (x0 + 190, y0 + 4), (x0 + 210, y0 + 22),
+             (x0 + 196, y0 + 44), (x0 + 160, y0 + 52), (x0 + 120, y0 + 66),
+             (x0 + 84, y0 + 70), (x0 + 56, y0 + 58), (x0 + 40, y0 + 34)],
+            (232, 217, 184))
+    # Yucatan bump
+    cv.poly([(x0 + 160, y0 + 52), (x0 + 196, y0 + 44), (x0 + 206, y0 + 56),
+             (x0 + 188, y0 + 64), (x0 + 166, y0 + 60)], (232, 217, 184))
+    # US (top-right, lighter)
+    cv.poly([(x0 + 190, y0), (x0 + 318, y0), (x0 + 318, y0 + 18),
+             (x0 + 206, y0 + 20), (x0 + 196, y0 + 10)], (214, 206, 188))
+    draw_text(cv, x0 + 8, y0 + 80, "PACIFIC", 7, (60, 60, 60))
+    draw_text(cv, x0 + 32, y0 + 56, "GULF", 7, (60, 60, 60))
+    draw_text(cv, x0 + 96, y0 + 20, "MEXICO", 10, (90, 80, 66))
+    draw_text(cv, x0 + 224, y0 + 12, "U.S.", 8, (90, 80, 66))
+    # Guasave pin on the Sinaloa coast (west mainland)
+    gx, gy = x0 + 62, y0 + 44
+    cv.circle(gx, gy, 3, RED)
+    star(cv, gx, gy, 9, RED)
+    draw_text(cv, gx + 12, gy + 3, "GUASAVE", 8, RED)
+    # right column: FBI TOP TEN / CAPTURED / 11 DEAD
+    cv.rect(x0 + 214, y0 + 26, x0 + 310, y0 + 42, INK)
+    draw_text(cv, x0 + 262, y0 + 38, "FBI TOP TEN", 9, (255, 255, 255),
+              align="center")
+    cv.rect(x0 + 214, y0 + 46, x0 + 310, y0 + 62, RED)
+    draw_text(cv, x0 + 262, y0 + 58, "CAPTURED", 10, (255, 255, 255),
+              align="center")
+    cv.rect(x0 + 214, y0 + 66, x0 + 310, y0 + 82, INK)
+    draw_text(cv, x0 + 262, y0 + 78, "11 DEAD", 10, (255, 255, 255),
+              align="center")
 
 def draw_sparta(cv, x0, y0, x1, y1):
     cv.rect(x0, y0, x1, y1, (30, 58, 82))
@@ -876,14 +919,21 @@ def draw_cop31(cv, x0, y0, x1, y1):
     for i in range(5):
         cv.rect(x0 + 8 + i * 14, y0 + 48, x0 + 18 + i * 14, y0 + 56, (255, 255, 255))
     draw_text(cv, x0 + 8, y1 - 8, "talks paused for the night", 8, (90, 80, 66))
-    # draft paper
+    # calendar: 16-21 Nov, Sat 21 in overtime (Reference A)
     px0, py0 = x0 + 118, y0
     cv.rect(px0, py0, px0 + 92, py0 + 62, (255, 255, 255))
     cv.rect(px0, py0, px0 + 92, py0 + 62, INK)
-    draw_text(cv, px0 + 6, py0 + 12, "DRAFT TEXT", 8, (90, 80, 66))
-    draw_text(cv, px0 + 6, py0 + 32, "fossil fuels", 13, RED)
-    cv.line(px0 + 6, py0 + 28, px0 + 72, py0 + 28, RED, 2)
-    draw_text(cv, px0 + 6, py0 + 48, "no mention in the draft", 8, (90, 80, 66))
+    draw_text(cv, px0 + 6, py0 + 12, "NOVEMBER", 8, (90, 80, 66))
+    for i, d in enumerate([16, 17, 18, 19, 20, 21]):
+        cx = px0 + 6 + i * 14
+        if d == 21:
+            cv.rect(cx, py0 + 18, cx + 12, py0 + 34, RED)
+            draw_text(cv, cx + 6, py0 + 30, "21", 9, (255, 255, 255),
+                      align="center")
+        else:
+            draw_text(cv, cx + 6, py0 + 30, str(d), 9, INK, align="center")
+    draw_text(cv, px0 + 6, py0 + 48, "SAT 21 · OVERTIME", 8, RED)
+    draw_text(cv, px0 + 6, py0 + 58, "NO DEAL YET", 8, RED)
     # clock
     cx, cy = x1 - 44, y0 + 30
     cv.circle(cx, cy, 26, (255, 255, 255))
@@ -906,11 +956,19 @@ def pic(cv, x, y, w, h, code):
         cv.rect(x + 54, y + 6, x + 94, y + 16, (210, 30, 30))
         cv.rect(x + 54, y + 16, x + 94, y + 26, (255, 255, 255))
         draw_text(cv, x + w - 8, y + 24, "98.5%", 16, RED, align="right")
-    elif code == "wanted":
-        cv.rect(x, y, x + w, y + h, (232, 217, 184))
-        draw_text(cv, x + 8, y + 12, "WANTED", 9, INK)
-        draw_text(cv, x + 8, y + 28, "$5m", 15, RED)
-        draw_text(cv, x + w - 8, y + 28, "11 DEAD", 10, INK, align="right")
+    elif code == "sparta":
+        cv.rect(x, y, x + w, y + h, (30, 58, 82))
+        # hull + containers
+        cv.poly([(x + 10, y + 24), (x + 120, y + 24), (x + 112, y + 31),
+                 (x + 18, y + 31)], (16, 16, 16))
+        for i, c in enumerate([(178, 32, 26), (42, 82, 128), (62, 122, 62)]):
+            cv.rect(x + 20 + i * 18, y + 14, x + 36 + i * 18, y + 24, c)
+        # flame + smoke
+        cv.poly([(x + 96, y + 14), (x + 102, y + 2), (x + 108, y + 14)],
+                (230, 120, 20))
+        cv.circle(x + 110, y + 6, 5, (120, 118, 110))
+        draw_text(cv, x + w - 8, y + 22, "16 CREW SAFE", 11, (255, 255, 255),
+                  align="right")
     elif code == "robot":
         cv.rect(x, y, x + w, y + h, (220, 220, 216))
         cv.rect(x + 14, y + 8, x + 46, y + 28, (90, 90, 90))
@@ -923,46 +981,60 @@ def pic(cv, x, y, w, h, code):
         cv.circle(x + 26, y + 17, 12, (210, 130, 60))
         cv.circle(x + 30, y + 13, 3, (180, 100, 40))
         draw_text(cv, x + w - 8, y + 26, "18:24", 15, (255, 255, 255), align="right")
-    elif code == "boat":
-        cv.rect(x, y, x + w, y + h, (160, 200, 220))
-        cv.poly([(x + 20, y + 22), (x + 70, y + 22), (x + 62, y + 30),
-                 (x + 28, y + 30)], (90, 70, 50))
-        cv.line(x + 45, y + 22, x + 45, y + 8, (90, 70, 50), 2)
-        draw_text(cv, x + w - 8, y + 26, "24 DEAD", 13, INK, align="right")
+    elif code == "bitcoin":
+        cv.rect(x, y, x + w, y + h, (24, 28, 40))
+        # falling then rebounding line
+        cv.line(x + 10, y + 14, x + 65, y + 16, (240, 200, 40), 2)
+        cv.line(x + 65, y + 16, x + 112, y + 28, RED, 2)
+        cv.line(x + 112, y + 28, x + 165, y + 20, (46, 200, 120), 2)
+        cv.circle(x + 112, y + 28, 3, RED)
+        draw_text(cv, x + 8, y + 10, "$60K", 9, (255, 255, 255))
+        draw_text(cv, x + w - 8, y + 12, "$55,100", 11, RED, align="right")
     elif code == "quake":
         cv.rect(x, y, x + w, y + h, (246, 240, 224))
-        cv.line(x + 6, y + 20, x + 20, y + 20, RED, 2)
-        cv.line(x + 20, y + 20, x + 30, y + 6, RED, 2)
-        cv.line(x + 30, y + 6, x + 40, y + 28, RED, 2)
-        cv.line(x + 40, y + 28, x + 52, y + 20, RED, 2)
-        cv.line(x + 52, y + 20, x + 66, y + 20, RED, 2)
-        draw_text(cv, x + w - 8, y + 26, "M6.8", 15, RED, align="right")
-    elif code == "bottle":
+        # ground surface + strata, depth arrow to hypocentre
+        cv.rect(x, y + 8, x + w, y + 10, (120, 110, 96))
+        cv.line(x + 6, y + 16, x + w - 6, y + 16, (190, 182, 168), 1)
+        cv.line(x + 6, y + 24, x + w - 6, y + 24, (190, 182, 168), 1)
+        cv.line(x + 60, y + 10, x + 60, y + 28, RED, 2)
+        cv.circle(x + 60, y + 28, 4, RED)
+        cv.circle(x + 60, y + 28, 8, RED, fill=False)
+        draw_text(cv, x + 70, y + 20, "108 KM", 11, RED)
+        draw_text(cv, x + w - 8, y + 32, "M6.7", 15, RED, align="right")
+    elif code == "fire":
         cv.rect(x, y, x + w, y + h, (246, 240, 224))
-        cv.rect(x + 22, y + 6, x + 34, y + 30, (40, 110, 60))
-        cv.rect(x + 26, y + 2, x + 30, y + 8, (40, 110, 60))
-        cv.rect(x + 22, y + 20, x + 34, y + 24, (255, 255, 255))
-        draw_text(cv, x + w - 8, y + 26, "11 DEAD", 13, INK, align="right")
-    elif code == "rugby":
-        cv.rect(x, y, x + w, y + h, (60, 130, 70))
-        cv.line(x + 24, y + 6, x + 24, y + 28, (255, 255, 255), 2)
-        cv.line(x + 44, y + 6, x + 44, y + 28, (255, 255, 255), 2)
-        cv.line(x + 24, y + 14, x + 44, y + 14, (255, 255, 255), 2)
-        draw_text(cv, x + w - 8, y + 26, "37–12", 15, (255, 255, 255), align="right")
-    elif code == "trophy":
+        # power-plant block + chimney
+        cv.rect(x + 14, y + 14, x + 46, y + 30, (120, 118, 110))
+        cv.rect(x + 50, y + 6, x + 56, y + 30, (120, 118, 110))
+        # flame
+        cv.poly([(x + 20, y + 14), (x + 28, y + 2), (x + 36, y + 14)],
+                (230, 120, 20))
+        cv.poly([(x + 24, y + 14), (x + 28, y + 6), (x + 32, y + 14)],
+                (240, 200, 40))
+        draw_text(cv, x + w - 8, y + 26, "4 DEAD", 13, RED, align="right")
+    elif code == "dengue":
         cv.rect(x, y, x + w, y + h, (246, 240, 224))
-        cv.rect(x + 20, y + 8, x + 40, y + 22, (210, 170, 40))
-        cv.rect(x + 14, y + 10, x + 20, y + 18, (210, 170, 40))
-        cv.rect(x + 40, y + 10, x + 46, y + 18, (210, 170, 40))
-        cv.rect(x + 26, y + 22, x + 34, y + 28, (210, 170, 40))
-        draw_text(cv, x + w - 8, y + 26, "5 AWARDS", 13, INK, align="right")
-    elif code == "march":
+        # bars: before (tall) / after (short) = cases down 69%
+        cv.rect(x + 16, y + 6, x + 30, y + 30, (178, 32, 26))
+        cv.rect(x + 38, y + 20, x + 52, y + 30, (46, 122, 62))
+        draw_text(cv, x + w - 8, y + 26, "-69%", 16, RED, align="right")
+    elif code == "jets":
+        cv.rect(x, y, x + w, y + h, (191, 217, 232))
+        # median line (dashed) + jets crossing it
+        dashed(cv, x + 90, y + 2, x + 90, y + 32, RED)
+        for (jx, jy) in [(x + 40, y + 10), (x + 62, y + 20), (x + 104, y + 10)]:
+            cv.poly([(jx, jy), (jx + 14, jy + 3), (jx, jy + 6)], (40, 40, 40))
+        draw_text(cv, x + w - 8, y + 28, "15 CROSSED", 11, RED, align="right")
+    elif code == "vote":
         cv.rect(x, y, x + w, y + h, (246, 240, 224))
-        for i in range(5):
-            cx = x + 16 + i * 14
-            cv.circle(cx, y + 12, 5, INK)
-            cv.rect(cx - 6, y + 18, cx + 6, y + 30, INK)
-        draw_text(cv, x + w - 8, y + 26, "82,500", 13, RED, align="right")
+        # ballot box + slip
+        cv.rect(x + 16, y + 14, x + 48, y + 30, (42, 82, 128))
+        cv.rect(x + 24, y + 6, x + 40, y + 16, (255, 255, 255))
+        cv.hline(x + 24, x + 40, y + 6, INK, 1)
+        cv.hline(x + 24, x + 40, y + 15, INK, 1)
+        cv.vline(x + 24, y + 6, y + 16, INK, 1)
+        cv.vline(x + 39, y + 6, y + 16, INK, 1)
+        draw_text(cv, x + w - 8, y + 26, "54/54", 16, INK, align="right")
 
 # ------------------------------------------------------- world map
 def world_map(cv, x0, y0, x1, y1):
@@ -991,60 +1063,61 @@ def world_map(cv, x0, y0, x1, y1):
         if big:
             draw_text(cv, px, py + 2.5, str(n), 7, (255, 255, 255), align="center")
     pin(50, 26, 1, REG_COL["Middle East"])
-    pin(25, 62, 2, REG_COL["Europe"])
+    pin(-108, 25, 2, REG_COL["N. America"])
     pin(30, 37, 3, REG_COL["Europe"])
-    pin(4, 51, 4, REG_COL["Europe"])
-    pin(-108, 25, 5, REG_COL["Americas"])
-    pin(6, 46, 6, REG_COL["Global"])
-    pin(6, 5, 8, REG_COL["Africa"])
-    pin(130, -8, 9, REG_COL["SE Asia"])
-    pin(94, 25, 10, REG_COL["South Asia"])
-    pin(0, 51, 11, REG_COL["Europe"])
-    pin(135, 35, 12, REG_COL["East Asia"])
-    pin(2, 49, 13, REG_COL["Europe"])
+    pin(-76, -11, 4, REG_COL["Latin Am."])
+    pin(25, 62, 5, REG_COL["Europe"])
+    pin(6, 46, 6, REG_COL["Europe"])
+    pin(4, 51, 7, REG_COL["Europe"])
+    pin(-100, 38, 8, REG_COL["N. America"])
+    pin(8, 50, 9, REG_COL["Europe"])
+    pin(47, 30, 10, REG_COL["Middle East"])
+    pin(-44, -20, 11, REG_COL["Latin Am."])
+    pin(121, 23, 12, REG_COL["East Asia"])
+    pin(7, 9, 13, REG_COL["Africa"])
     for (lon, lat, col) in [
-            (35, 32, REG_COL["Middle East"]), (30, 50, REG_COL["Europe"]),
-            (34, 31, REG_COL["Middle East"]), (47, 25, REG_COL["Middle East"]),
+            (2, 47, REG_COL["Europe"]), (30, 50, REG_COL["Europe"]),
+            (0, 51, REG_COL["Europe"]), (-6, 53, REG_COL["Europe"]),
+            (8, 45, REG_COL["Europe"]), (47, 25, REG_COL["Middle East"]),
+            (57, 27, REG_COL["Middle East"]), (34, 31, REG_COL["Middle East"]),
             (35, 34, REG_COL["Middle East"]), (4, 51, REG_COL["Europe"]),
-            (-48, -16, REG_COL["Americas"]), (-76, -11, REG_COL["Americas"]),
-            (-77, 39, REG_COL["Americas"]), (106, -6, REG_COL["SE Asia"]),
+            (140, 37, REG_COL["East Asia"]), (106, -6, REG_COL["SE Asia"]),
             (106, 21, REG_COL["SE Asia"]), (90, 24, REG_COL["South Asia"]),
-            (67, 30, REG_COL["South Asia"]), (116, 40, REG_COL["East Asia"]),
-            (97, 36, REG_COL["East Asia"]), (16, 46, REG_COL["Europe"]),
-            (-6, 53, REG_COL["Europe"]), (8, 45, REG_COL["Europe"]),
-            (145, -38, REG_COL["Oceania"]), (175, -41, REG_COL["Oceania"]),
-            (7, 9, REG_COL["Africa"]), (6, 10, REG_COL["Africa"]),
-            (-5, 50, REG_COL["Europe"]), (57, 27, REG_COL["Middle East"])]:
+            (6, 10, REG_COL["Africa"]), (32, 1, REG_COL["Africa"]),
+            (7, 9, REG_COL["Africa"]), (-77, 39, REG_COL["N. America"]),
+            (-77, 39, REG_COL["N. America"]), (-48, -16, REG_COL["Latin Am."]),
+            (-5, 50, REG_COL["Europe"]), (145, -38, REG_COL["Oceania"]),
+            (131, -12, REG_COL["Oceania"]), (175, -41, REG_COL["Oceania"])]:
         pin(lon, lat, 0, col, big=False)
     cv.rect(x0 + 6, y1 - 24, x0 + 134, y1 - 6, (24, 28, 40))
-    draw_text(cv, x0 + 10, y1 - 10, "MERCURY  7 · in orbit 18:24", 8,
+    draw_text(cv, x0 + 10, y1 - 10, "MERCURY  9 · in orbit 18:24", 8,
               (255, 255, 255))
 
 TICKER = [
-    (14, "Jerusalem: Eisenkot invites Likud to talks (AFP, TOI)", "Middle East"),
-    (15, "Kyiv: Zelensky calls bridge hit 'fair response' (BBC, KI)", "Europe"),
-    (16, "Gaza City: Strike on food vehicle kills three (REUTERS)", "Middle East"),
-    (17, "Riyadh: Coalition says 3 Houthi missiles downed (AJ)", "Middle East"),
-    (18, "Beirut: Aoun wants Israeli pull-out, Iran out (AJ, TOI)", "Middle East"),
-    (19, "Brussels: Costa's budget: €204bn cut, big-tech tax (DW)", "Europe"),
-    (20, "Brasilia: Bolsonaro moved to intensive care (REUTERS, AJ)", "Americas"),
-    (21, "Junin, Peru: M6.7 quake, 00:09 UTC, no casualties (USGS, AP)", "Americas"),
-    (22, "Washington: FBI probes crime-database breach (BBC, CBC)", "Americas"),
-    (23, "Serang, Java: Factory fire: 3 dead, 36 missing (BBC)", "SE Asia"),
-    (24, "Hanoi: Law speeds up land expropriation (REUTERS)", "SE Asia"),
-    (25, "Sevara: 80 garment factories shut in protests (TBS)", "South Asia"),
-    (26, "Mastung: Forces kill 15 militants, state media (DAWN)", "South Asia"),
-    (27, "Beijing: Singapore's Wong meets Li Qiang (ST, BU)", "East Asia"),
-    (28, "Qinghai: M5.9 quake at 10:45 UTC in west China (USGS)", "East Asia"),
-    (29, "Zagreb: Rally over psychiatric ward death (REUTERS)", "Europe"),
-    (30, "Dublin: Ireland beat South Africa 20–17 (BBC)", "Europe"),
-    (31, "Turin: Alcaraz in ATP final after beating Shelton (BBC)", "Europe"),
-    (32, "Australia: Hosts beat England by 3 wickets in T20 (BBC)", "Oceania"),
-    (33, "Wellington: India 486–4, lead NZ by 118 (AFP)", "Oceania"),
-    (34, "Abuja: CAF makes Kiswahili official language (CAF)", "Africa"),
-    (35, "Niger State: Gunmen kill village head in raid (D. TRUST)", "Africa"),
-    (36, "Cornwall: Spitting Image's Peter Fluck dies at 85 (BBC)", "Europe"),
-    (37, "Hormuz: Pugh ends swim for whale-shark sea life (BBC)", "Middle East"),
+    (14, "France: 144 held at cost marches (AFP)", "Europe"),
+    (15, "Kyiv: UK deal to build drones (UK MOD)", "Europe"),
+    (16, "London: England 37, All Blacks 12 (BBC)", "Europe"),
+    (17, "Dublin: Ireland beat SA 20–17 (BBC)", "Europe"),
+    (18, "Turin: Alcaraz beats Shelton (BBC)", "Europe"),
+    (19, "Riyadh: 3 Houthi missiles downed (AJ)", "Middle East"),
+    (20, "Hormuz: Iran claims US drone kill (IRAN CLAIM)", "Middle East"),
+    (21, "Gaza City: Strike on food vehicle kills three (REUTERS)", "Middle East"),
+    (22, "Beirut: Aoun wants Israeli pull-out, Iran out (AJ, TOI)", "Middle East"),
+    (23, "Brussels: Costa's budget: 204bn, big-tech tax (DW)", "Europe"),
+    (24, "Fukushima: Heavy snow isolates 1,400 (XINHUA)", "East Asia"),
+    (25, "Serang, Java: Factory fire: 3 dead, 36 missing (BBC)", "SE Asia"),
+    (26, "Hanoi: Law speeds up land expropriation (REUTERS)", "SE Asia"),
+    (27, "Bangladesh: Measles toll hits 1,343 (DGHS)", "South Asia"),
+    (28, "Niger State: Gunmen kill village head in raid (D. TRUST)", "Africa"),
+    (29, "Uganda: $3bn rail deal 'off' (MUHOOZI)", "Africa"),
+    (30, "Abuja: CAF makes Kiswahili official language (CAF)", "Africa"),
+    (31, "US: Trump backs 10% card cap (AP)", "N. America"),
+    (32, "US: Trump: FBI hack 'not good' (AP)", "N. America"),
+    (33, "Brasilia: Bolsonaro to intensive care (REUTERS, AJ)", "Latin Am."),
+    (34, "Cornwall: Spitting Image's Peter Fluck dies at 85 (BBC)", "Europe"),
+    (35, "Melbourne: Australia beat England by 3 wickets (BBC)", "Oceania"),
+    (36, "Darwin: M6.8 Timor quake felt (USGS)", "Oceania"),
+    (37, "Wellington: India 486–4, lead NZ by 118 (AFP)", "Oceania"),
 ]
 
 if __name__ == "__main__":
