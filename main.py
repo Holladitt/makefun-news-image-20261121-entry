@@ -420,12 +420,67 @@ glyph('○', 40, ring(20, 42, 14, 14, 5))
 glyph('◇', 40, [[(20, 62), (32, 42), (20, 22), (8, 42)],
                 list(reversed([(20, 56), (27, 42), (20, 28), (13, 42)]))])
 glyph(' ', 22, [])
+glyph('~', 40, [ribbon(crspline([(6, 26), (14, 36), (22, 26), (30, 16),
+                                  (38, 26)], 6), 5)])
+
+# ---- Didone display font (masthead only): thick 12, hairline 3-5.
+# Same em metrics as G (cap 72, x-height 52, descender -26) so sizes match.
+# Covers exactly the masthead "Saturday 21 November 2026".
+D = {}
+def dglyph(ch, adv, polys):
+    D[ch] = (adv, polys)
+dglyph('S', 56, [ribbon(crspline([(44, 64), (34, 72), (18, 70), (12, 58),
+                                  (16, 46), (30, 40), (42, 34), (46, 22),
+                                  (40, 8), (26, 4), (14, 10)], 12), 5)] +
+      [disc(45, 65, 4, 4), disc(13, 9, 4, 4)])
+dglyph('a', 46, ring(28, 42, 6, 5, 3) + ring(21, 16, 14, 14, 5) +
+      [R(33, 0, 45, 52)] + [serif(39, 12, 0)] + [R(33, 47, 45, 52)])
+dglyph('t', 32, [R(11, 0, 23, 64)] +
+      [ribbon(crspline([(11, 64), (17, 68), (23, 62)], 4), 4)] +
+      bar(4, 32, 40, 3.5) +
+      [ribbon(crspline([(11, 0), (14, -6), (20, -8)], 4), 4)])
+dglyph('u', 48, [R(6, 16, 18, 52)] + [serif(12, 12, 52, True)] +
+      [R(33, 0, 45, 52)] + [serif(39, 12, 0)] +
+      [band(24, 16, 18, 16, 4, 180, 360, 16)])
+dglyph('r', 34, [R(6, 0, 18, 52)] + [serif(12, 12, 0)] +
+      [band(23, 39, 11, 13, 4, -45, 180, 14)])
+dglyph('d', 48, ring(24, 26, 20, 26, 5) + [R(38, 0, 50, 72)] +
+      [R(38, 66, 50, 72)])
+dglyph('y', 46, [ribbon(crspline([(6, 52), (26, 0)], 2), 7),
+                ribbon(crspline([(40, 52), (20, 0)], 2), 4)] +
+      [ribbon([(22, 6), (12, -22)], 5)])
+dglyph('2', 56, [ribbon(crspline([(10, 48), (14, 64), (30, 70), (44, 62),
+                                  (46, 48), (34, 30), (14, 8), (8, 2)], 12), 6)] +
+      bar(8, 48, 0, 3))
+dglyph('1', 32, [R(15, 0, 27, 72)] +
+      [ribbon(crspline([(3, 48), (8, 60), (15, 72)], 6), 5), R(4, 0, 27, 6)])
+dglyph('0', 56, [R(4, 10, 16, 62)] + [R(40, 10, 52, 62)] +
+      [band(28, 36, 24, 36, 4, 0, 180, 16), band(28, 36, 24, 36, 4, 180, 360, 16)])
+dglyph('6', 56, [ribbon(crspline([(46, 66), (30, 72), (14, 62), (10, 42),
+                                  (12, 22), (24, 8), (38, 12), (44, 26),
+                                  (40, 38), (28, 40), (18, 34)], 14), 5)])
+dglyph('N', 60, [R(4, 0, 16, 72)] + [R(46, 0, 58, 72)] +
+      [ribbon(crspline([(14, 68), (46, 4)], 2), 8)])
+dglyph('o', 48, [R(4, 10, 16, 42)] + [R(32, 10, 44, 42)] +
+      [band(24, 26, 20, 26, 4, 0, 180, 16), band(24, 26, 20, 26, 4, 180, 360, 16)])
+dglyph('v', 46, [ribbon(crspline([(6, 52), (26, 0)], 2), 8),
+                ribbon(crspline([(40, 52), (20, 0)], 2), 4)])
+dglyph('e', 46, [band(25, 26, 20, 26, 4, 15, 345, 22), R(5, 26, 45, 30)] +
+      [R(38, 26, 46, 36)])
+dglyph('m', 68, [R(5, 0, 17, 52)] +
+      [band(26, 39, 13, 13, 4, 0, 180, 14), R(35, 0, 44, 40)] +
+      [band(48, 39, 13, 13, 4, 0, 180, 14), R(57, 0, 66, 40)] +
+      [serif(11, 12, 0), serif(39, 12, 0), serif(61, 12, 0)])
+dglyph('b', 48, [R(6, 0, 18, 72)] +
+      [band(28, 26, 20, 26, 5, -90, 90, 18)] + bar(6, 28, 0, 4))
+dglyph(' ', 22, [])
 
 # ------------------------------------------------------- text rendering
-def glyph_polys(ch, scale, ox, oy, shear=0.0):
+def glyph_polys(ch, scale, ox, oy, shear=0.0, font=None):
     """Scale glyph polygons into pixel space; oy = baseline y (pixels).
     Embolden: shifted copies thicken stems (+x) and bars (+y) by ~1.6 units."""
-    adv, polys = G.get(ch, G.get('?', (48, [])))
+    font = font or G
+    adv, polys = font.get(ch, font.get('?', (48, [])))
     out = []
     for p in polys:
         q = []
@@ -440,9 +495,10 @@ def glyph_polys(ch, scale, ox, oy, shear=0.0):
         out.append([(X, Y + 1.6 * scale) for (X, Y) in q])
     return adv * scale, out
 
-def text_width(s, size):
+def text_width(s, size, font=None):
+    font = font or G
     scale = size / CAP
-    return sum(G.get(ch, G.get('?', (48, [])))[0] * scale for ch in s)
+    return sum(font.get(ch, font.get('?', (48, [])))[0] * scale for ch in s)
 
 def _fill_tile(tile, tw, th, polys):
     """Nonzero-winding scanline fill of polygons into a grayscale tile."""
@@ -477,17 +533,17 @@ def _fill_tile(tile, tw, th, polys):
                 if xb > xa:
                     tile[y * tw + xa:y * tw + xb] = b"\xff" * (xb - xa)
 
-def draw_text(cv, x, y, s, size, color, align="left", shear=0.0, tracking=0.0):
+def draw_text(cv, x, y, s, size, color, align="left", shear=0.0, tracking=0.0, font=None):
     """Draw string s with baseline at y. 2x-supersampled glyphs -> AA text."""
     scale = size / CAP
-    total = text_width(s, size) + tracking * max(0, len(s) - 1)
+    total = text_width(s, size, font) + tracking * max(0, len(s) - 1)
     if align == "center":
         x -= total / 2
     elif align == "right":
         x -= total
     cx = x
     for ch in s:
-        adv, polys = glyph_polys(ch, scale, cx, y, shear)
+        adv, polys = glyph_polys(ch, scale, cx, y, shear, font)
         if polys:
             xs = [p[0] for poly in polys for p in poly]
             ys = [p[1] for poly in polys for p in poly]
@@ -519,12 +575,12 @@ def draw_text(cv, x, y, s, size, color, align="left", shear=0.0, tracking=0.0):
         cx += adv + tracking
     return total
 
-def wrap_text(s, size, maxw, tracking=0.0):
+def wrap_text(s, size, maxw, tracking=0.0, font=None):
     words = s.split(" ")
     lines, cur = [], ""
     for w in words:
         t = (cur + " " + w).strip()
-        if text_width(t, size) + tracking * max(0, len(t) - 1) <= maxw or not cur:
+        if text_width(t, size, font) + tracking * max(0, len(t) - 1) <= maxw or not cur:
             cur = t
         else:
             lines.append(cur)
@@ -588,56 +644,62 @@ def main():
               align="right")
     cv.hline(X0, X1, 24, INK, 2)
 
-    # masthead — v8 font untouched; red date box at the right (Reference A)
-    draw_fit(cv, "Saturday 21 November 2026", X0, X1 - 150, 98, 76, INK)
+    # masthead — Didone display font (v11), red date box at the right
+    draw_fit(cv, "Saturday 21 November 2026", X0, X1 - 150, 98, 76, INK,
+             font=D)
     cv.rect(X1 - 138, 38, X1, 104, RED)
     draw_text(cv, X1 - 69, 70, "SAT 21", 20, (255, 255, 255), align="center")
     draw_text(cv, X1 - 69, 94, "NOV", 20, (255, 255, 255), align="center")
     cv.hline(X0, X1, 112, INK, 2)
 
-    # tagline (Reference A)
-    draw_fit(cv, "Iran strikes Bahrain · Mexico captures 'El Chapo Isidro' "
-             "· COP31 talks run into overtime", X0, X1, 134, 15, INK,
+    # tagline (Reference A: italic, red)
+    draw_fit(cv, "Iran strikes Bahrain · Mexico captures \"El Chapo Isidro\" "
+             "· COP31 talks run into overtime", X0, X1, 134, 15, RED,
              shear=0.18)
     cv.hline(X0, X1, 142, INK, 1)
 
-    # ---- timeline: THE DAY IN UTC — one clean row, labels 11px, no
-    # overlaps (v9's labels collided with the box and each other)
-    cv.rect(X0, 150, X0 + 108, 166, INK)
-    draw_text(cv, X0 + 54, 162, "THE DAY IN UTC", 10, (255, 255, 255), align="center")
-    ax0, ax1, ay = X0 + 118, X1 - 4, 170
+    # ---- timeline: THE DAY IN UTC — one row, labels above the axis
+    # (Reference A: 6 pins, labels in a single row, dots on the axis)
+    cv.rect(X0, 148, X0 + 108, 164, INK)
+    draw_text(cv, X0 + 54, 160, "THE DAY IN UTC", 10, (255, 255, 255), align="center")
+    ax0, ax1, ay = X0 + 118, X1 - 4, 176
     cv.hline(ax0, ax1, ay, INK, 2)
-    pins = [(0.15, "00:09 Peru", True, 185),
-            (2.0, "02:00 Sinaloa", False, 215),
-            (5.0, "05:00 Tanker", True, 330),
-            (18.4, "18:24 Mercury", False, 790),
-            (19.7, "19:44 Bahrain", True, 860),
-            (22.0, "22:00 COP31", False, 940)]
-    for hr, label, above, lx in pins:
+    pins = [(0.15, "00:09 Peru M6.7 quake"),
+            (2.0, "02:00 Sinaloa gunfight"),
+            (5.0, "05:00 Tanker hit, Hormuz"),
+            (18.4, "18:24 Mercury orbit burn"),
+            (19.7, "19:44 Bahrain site ablaze"),
+            (22.0, "Night COP31 talks go on")]
+    slot = (ax1 - ax0) / len(pins)
+    for i, (hr, label) in enumerate(pins):
         px = ax0 + hr / 24 * (ax1 - ax0)
         cv.circle(px, ay, 4, RED)
-        draw_text(cv, lx, 158 if above else 188, label, 11, INK, align="center")
+        draw_text(cv, ax0 + slot * (i + 0.5), 170, label, 10, INK, align="center")
         cv.line(px, ay - 6, px, ay + 6, RED, 2)
 
-    # ---- numbers strip — bigger numbers, 2-line captions only
-    nums = [("6.7", "quake magnitude, 108 km under central Peru (USGS)"),
-            ("11", "killed in Sinaloa as 'El Chapo Isidro' is caught (AP)"),
-            ("$55,100", "Bitcoin's low, lowest since September 2024 (COINBASE)"),
+    # ---- numbers strip — "THE DAY IN NUMBERS" red box + 5 numbers
+    # (Reference A, text copied exactly)
+    cv.rect(X0, 190, X0 + 88, 244, RED)
+    draw_text(cv, X0 + 44, 214, "THE DAY IN", 11, (255, 255, 255), align="center")
+    draw_text(cv, X0 + 44, 230, "NUMBERS", 11, (255, 255, 255), align="center")
+    nums = [("6.7", "magnitude of the quake 108 km under central Peru"),
+            ("11", "killed in Sinaloa as \"El Chapo Isidro\" is caught"),
+            ("$55,100", "Bitcoin's low, its lowest since September 2024"),
             ("82,500", "marched in France over living costs (ministry)"),
-            ("128", "states in Geneva agree to work on AI-weapon rules (UN)")]
-    ny = 200
+            ("128", "states in Geneva agree to work on AI-weapon rules")]
+    ny = 190
     for i, (n, lab) in enumerate(nums):
-        cx = X0 + i * 199
+        cx = X0 + 88 + i * 182
         if i:
-            cv.vline(cx, ny, ny + 50, (200, 192, 176), 1)
-        draw_text(cv, cx + 99, ny + 26, n, 28, INK, align="center")
-        for j, ln in enumerate(wrap_text(lab, 10.5, 188)[:2]):
-            draw_text(cv, cx + 99, ny + 40 + j * 12, ln, 10.5, (90, 80, 66),
+            cv.vline(cx, ny, ny + 54, (200, 192, 176), 1)
+        draw_text(cv, cx + 91, ny + 26, n, 28, INK, align="center")
+        for j, ln in enumerate(wrap_text(lab, 10.5, 172)[:2]):
+            draw_text(cv, cx + 91, ny + 40 + j * 12, ln, 10.5, (90, 80, 66),
                       align="center")
 
     # ---- region bar (Reference A: 9 named regions, equal segments)
-    cv.rect(X0, 256, X0 + 136, 272, INK)
-    draw_text(cv, X0 + 68, 268, "STORIES BY REGION", 10, (255, 255, 255), align="center")
+    cv.rect(X0, 248, X0 + 136, 264, INK)
+    draw_text(cv, X0 + 68, 260, "STORIES BY REGION", 10, (255, 255, 255), align="center")
     regs = [("EUROPE", "Europe"), ("MID. EAST", "Middle East"),
             ("S. ASIA", "South Asia"), ("E. ASIA", "East Asia"),
             ("SE ASIA", "SE Asia"), ("AFRICA", "Africa"),
@@ -646,137 +708,129 @@ def main():
     rx = X0 + 136
     seg = (X1 - rx) / len(regs)
     for label, key in regs:
-        cv.rect(rx, 256, min(rx + seg, X1), 272, REG_COL[key])
-        draw_text(cv, rx + seg / 2, 268, label, 8, (255, 255, 255),
+        cv.rect(rx, 248, min(rx + seg, X1), 264, REG_COL[key])
+        draw_text(cv, rx + seg / 2, 260, label, 8, (255, 255, 255),
                   align="center")
         rx += seg
 
-    # ---- BIG LEAD: Bahrain full-width (v3 skeleton) — the day's biggest
-    # story owns the whole width, one-line headline, one-line body
-    draw_bahrain_big(cv, X0, 280, X1, 384)
-    kicker(cv, X0, 396, "1", "BAHRAIN / HORMUZ · WAR", "Middle East", "CLAIM", X1)
-    draw_text(cv, X0, 430, "Bahrain: Iran struck it; tanker hit off Oman", 28, INK)
-    draw_text(cv, X0, 454,
-              "A site ablaze, Bahrain says; UKMTO: a tanker struck 11 nm off "
-              "Khasab. (BAHRAIN, UKMTO)", 12, (60, 54, 44))
+    # ---- LEAD TRIO (Reference A): three equal panels — header, diagram,
+    # black strip, kicker, headline, body. Text copied exactly.
+    lw = 326
+    p0, p1, p2 = X0, X0 + 334, X0 + 668
+    # panel headers
+    draw_text(cv, p0, 274, "BAHRAIN · HORMUZ", 10, INK)
+    draw_text(cv, p1, 274, "MEXICO", 10, INK)
+    draw_text(cv, p2, 274, "COP31", 10, INK)
+    cv.rect(p2 + lw - 92, 264, p2 + lw, 278, RED)
+    draw_text(cv, p2 + lw - 46, 275, "NO DEAL YET", 9, (255, 255, 255), align="center")
+    # diagrams
+    draw_bahrain(cv, p0, 280, p0 + lw, 362)
+    draw_mexico(cv, p1, 280, p1 + lw, 362)
+    draw_cop31(cv, p2, 280, p2 + lw, 362)
+    # black strips
+    for px, txt in [(p0, "IRAN'S GUARDS CLAIM HITS ON US RADARS"),
+                    (p1, "FBI TOP-TEN FUGITIVE CAUGHT · 11 KILLED"),
+                    (p2, "DAY 13 · STILL NO DEAL ON SATURDAY")]:
+        cv.rect(px, 364, px + lw, 378, INK)
+        draw_text(cv, px + lw / 2, 375, txt, 9.5, (255, 255, 255), align="center")
+    # kickers + headlines + bodies
+    kicker(cv, p0, 390, "1", "BAHRAIN · STRAIT OF HORMUZ · WAR", "Middle East", "CLAIM", p0 + lw)
+    draw_text(cv, p0, 414, "Bahrain says Iran struck it;", 22, INK)
+    draw_text(cv, p0, 436, "tanker hit off Oman", 22, INK)
+    for j, ln in enumerate(wrap_text("An industrial site set ablaze, no one hurt, Bahrain says. UKMTO: a tanker struck 11 nm off Khasab. BAHRAIN · UKMTO · FRANCE 24", 11, lw)):
+        draw_text(cv, p0, 452 + j * 13, ln, 11, (60, 54, 44))
+    kicker(cv, p1, 390, "2", "GUASAVE, SINALOA · CRIME", "N. America", "CONFIRMED", p1 + lw)
+    draw_text(cv, p1, 414, "Mexico captures \"El Chapo", 22, INK)
+    draw_text(cv, p1, 436, "Isidro\"; 11 die", 22, INK)
+    for j, ln in enumerate(wrap_text("Troops seize Fausto Isidro Meza Flores; 4 soldiers and 7 gunmen killed. PBS · AL JAZEERA", 11, lw)):
+        draw_text(cv, p1, 452 + j * 13, ln, 11, (60, 54, 44))
+    kicker(cv, p2, 390, "3", "ANTALYA, TURKIYE · CLIMATE", "Europe", "CONFIRMED", p2 + lw)
+    draw_text(cv, p2, 414, "COP31 climate talks run", 22, INK)
+    draw_text(cv, p2, 436, "into overtime", 22, INK)
+    for j, ln in enumerate(wrap_text("Still split on fossil fuels and finance; closing session set for Sunday. ANADOLU · AFP", 11, lw)):
+        draw_text(cv, p2, 452 + j * 13, ln, 11, (60, 54, 44))
 
-    # ---- Mexico + COP31: half-width panels, diagram on top, one-line
-    # headline + body (diagrams reuse the v9 draw functions)
-    draw_mexico(cv, X0, 460, X0 + 490, 544)
-    cv.poly([(X0 + 346, 520), (X0 + 406, 514), (X0 + 436, 526),
-             (X0 + 406, 534), (X0 + 356, 530)], (232, 217, 184))
-    draw_text(cv, X0 + 380, 540, "GULF OF MEXICO", 8, (60, 60, 60))
-    kicker(cv, X0, 556, "2", "GUASAVE, SINALOA · CRIME", "N. America",
-           "CONFIRMED", X0 + 490)
-    draw_text(cv, X0, 578, "Mexico captures 'El Chapo Isidro'; 11 die", 19, INK)
-    draw_text(cv, X0, 598,
-              "Troops seize Meza Flores; 4 soldiers, 7 gunmen killed. "
-              "(PBS, AL JAZEERA)", 11, (60, 54, 44))
-    mx0 = X0 + 506
-    draw_cop31(cv, mx0, 460, X1, 544)
-    draw_text(cv, mx0 + 244, 508, "NO DEAL — DAY 13", 12, RED)
-    kicker(cv, mx0, 556, "3", "ANTALYA · CLIMATE", "Europe", "CONFIRMED", X1)
-    draw_text(cv, mx0, 578, "COP31 climate talks run into overtime", 19, INK)
-    draw_text(cv, mx0, 598,
-              "Talks run past Friday's deadline; approval session due "
-              "Sunday 06:00 GMT. (AFP, AP)", 11, (60, 54, 44))
-
-    # ---- grid 4-13 — taller cards, bigger headlines (15px), one-line
-    # bodies; dengue corrected to the published 71% (NEJM)
+    # ---- grid 4-13 (Reference A: red pic-title strip + source in the
+    # strip, kicker + badge, headline only — text copied exactly)
     cards = [
         ("quake", "4", "PERU · QUAKE", "Latin Am.", "OFFICIAL",
-         "Deep 6.7 quake shakes Peru",
-         "M6.7, 108 km deep. (USGS)"),
-        ("sparta", "5", "FINLAND · CONFLICT", "Europe", "CONFIRMED",
-         "Drones hit Russian cargo ship",
-         "16 crew evacuated. (YLE, AP)"),
+         "Deep 6.7 quake shakes Peru", "PERU: M6.7", "USGS"),
+        ("sparta", "5", "OFF FINLAND", "Europe", "CONFIRMED",
+         "Drones hit Russian cargo ship", "SHIP ABLAZE", "AFP · FRANCE 24"),
         ("robot", "6", "GENEVA · ARMS", "Europe", "CONFIRMED",
-         "Deal to draft killer-robot rules",
-         "128 states; draft by 2028. (DW)"),
-        ("flags", "7", "BRUSSELS · TRADE", "Europe", "CONFIRMED",
-         "EU and Indonesia sign trade pact",
-         "Lifts 98.5% of tariffs. (DW, ANTARA)"),
-        ("bitcoin", "8", "CRYPTO · BITCOIN", "N. America", "CONFIRMED",
-         "Bitcoin dives, then rebounds",
-         "Low $55,100; rebounded. (COINBASE)"),
-        ("mercury", "9", "SPACE · MERCURY", "Europe", "OFFICIAL",
-         "Mercury probe fires its orbit burn",
-         "BepiColombo's 37-minute burn. (ESA)"),
-        ("fire", "10", "BASRA · FIRE", "Middle East", "CONFIRMED",
-         "Power-plant fire kills 4 in Basra",
-         "Hartha station blaze; 30 hurt. (REUTERS)"),
-        ("dengue", "11", "BRAZIL · HEALTH", "Latin Am.", "REPORTED",
-         "Trial: mosquitoes cut dengue 71%",
-         "Wolbachia trial; 71% fewer cases. (NEJM)"),
-        ("jets", "12", "TAIWAN · MILITARY", "East Asia", "OFFICIAL",
-         "Chinese jets cross the median line",
-         "21 jets; 15 crossed. (TAIWAN MND)"),
-        ("vote", "13", "NIGERIA · SPORT", "Africa", "OFFICIAL",
-         "CAF's 54 nations back Infantino",
-         "All 54 back re-election bid. (CAF)"),
+         "Deal to draft killer-robot rules", "GENEVA: AI ARMS", "CNBC · AJ"),
+        ("flags", "7", "BRUSSELS", "Europe", "OFFICIAL",
+         "EU and Indonesia sign trade pact", "EU-INDONESIA", "EURONEWS"),
+        ("bitcoin", "8", "CRYPTO", "N. America", "CONFIRMED",
+         "Bitcoin dives, then rebounds", "BITCOIN", "COINBASE"),
+        ("mercury", "9", "ESA-JAXA", "Europe", "OFFICIAL",
+         "Mercury probe fires its orbit burn", "MERCURY ORBIT", "ESA"),
+        ("fire", "10", "IRAQ", "Middle East", "CONFIRMED",
+         "Power-plant fire kills 4 in Basra", "BASRA FIRE", "REUTERS"),
+        ("dengue", "11", "BRAZIL", "Latin Am.", "REPORTED",
+         "Trial: mosquitoes cut dengue 69%", "DENGUE TRIAL", "AP"),
+        ("jets", "12", "TAIWAN", "East Asia", "OFFICIAL",
+         "Chinese jets cross the median line", "TAIWAN: 21 JETS", "TAIWAN MND"),
+        ("vote", "13", "NIGERIA", "Africa", "OFFICIAL",
+         "CAF's 54 nations back Infantino", "CAF VOTE", "CAF · VON"),
     ]
-    for i, (code, num, kick, region, bd, head, body) in enumerate(cards):
+    for i, (code, num, kick, region, bd, head, title, src) in enumerate(cards):
         cx = X0 + (i % 5) * 201
-        cy = 606 + (i // 5) * 96
+        cy = 496 + (i // 5) * 104
         cw = 193
-        cv.rect(cx, cy, cx + cw, cy + 96, (255, 253, 246))
+        cv.rect(cx, cy, cx + cw, cy + 104, (255, 253, 246))
         cv.hline(cx, cx + cw, cy, (210, 202, 186), 1)
-        cv.hline(cx, cx + cw, cy + 95, (210, 202, 186), 1)
-        cv.vline(cx, cy, cy + 96, (210, 202, 186), 1)
-        cv.vline(cx + cw - 1, cy, cy + 96, (210, 202, 186), 1)
-        pic(cv, cx + 1, cy + 1, cw - 2, 36, code)
-        kicker(cv, cx + 4, cy + 47, num, kick, region, bd, cx + cw - 4)
+        cv.hline(cx, cx + cw, cy + 103, (210, 202, 186), 1)
+        cv.vline(cx, cy, cy + 104, (210, 202, 186), 1)
+        cv.vline(cx + cw - 1, cy, cy + 104, (210, 202, 186), 1)
+        cv.rect(cx + 1, cy + 1, cx + cw - 1, cy + 13, RED)
+        draw_text(cv, cx + 5, cy + 10, title, 9, (255, 255, 255))
+        draw_text(cv, cx + cw - 5, cy + 10, src, 8, (255, 255, 255), align="right")
+        pic(cv, cx + 1, cy + 13, cw - 2, 36, code)
+        kicker(cv, cx + 4, cy + 59, num, kick, region, bd, cx + cw - 4)
         for j, ln in enumerate(wrap_text(head, 15, cw - 8)):
-            draw_text(cv, cx + 4, cy + 65 + j * 17, ln, 15, INK)
-        bsize = 9.5
-        while text_width(body, bsize) > cw - 8 and bsize > 8.0:
-            bsize -= 0.5
-        draw_text(cv, cx + 4, cy + 91, body, bsize, (90, 80, 66))
+            draw_text(cv, cx + 4, cy + 77 + j * 17, ln, 15, INK)
 
-    # ---- bottom band: map + ticker, 2 columns (3 columns overflowed:
-    # the serif runs ~5.5px/char at 9.5px, wider than the column)
-    draw_text(cv, X0, 804, "WHERE IT HAPPENED", 11, INK)
-    draw_text(cv, 330, 804, "pins 1–13 numbered; dots = 14–37", 8, (90, 80, 66),
-              align="right")
-    world_map(cv, X0, 810, 330, 940)
-    draw_text(cv, 340, 804, "ALSO ON SATURDAY 21 NOVEMBER 2026", 11, INK)
-    draw_text(cv, X1, 804, "24 MORE STORIES", 10, RED, align="right")
-    cv.hline(340, X1, 810, INK, 1)
+    # ---- bottom band: map + ticker (Reference A)
+    draw_text(cv, X0, 720, "WHERE IT HAPPENED · pins 1–13 + drawn stories", 10, INK)
+    world_map(cv, X0, 726, 330, 904)
+    for j, ln in enumerate(wrap_text("CONFIRMED 2+ outlets · OFFICIAL on record · REPORTED one outlet · CLAIM one side says", 8, 316)):
+        draw_text(cv, X0, 912 + j * 10, ln, 8, (90, 80, 66))
+    draw_text(cv, 340, 720, "ALSO ON SATURDAY 21 NOVEMBER — 24 MORE STORIES", 11, INK)
+    draw_text(cv, X1, 720, "EVERY ONE FROM 21 NOV 2026", 10, RED, align="right")
+    cv.hline(340, X1, 726, INK, 1)
     for i, (n, txt, region) in enumerate(TICKER):
         col = i // 12
         row = i % 12
         tx = 340 + col * 335
-        ty = 818 + row * 12
+        ty = 734 + row * 14
         draw_text(cv, tx, ty, str(n), 9.5, REG_COL[region])
         draw_text(cv, tx + 22, ty, txt, 9.5, INK)
 
-    # ---- DATE CHECK
-    cv.rect(X0, 952, X0 + 96, 980, RED)
-    draw_text(cv, X0 + 48, 967, "DATE CHECK", 11, (255, 255, 255), align="center")
-    draw_text(cv, X0 + 48, 978, "left out on purpose", 7, (255, 255, 255),
+    # ---- DATE CHECK (Reference A text, copied exactly)
+    cv.rect(X0, 928, X0 + 96, 964, RED)
+    draw_text(cv, X0 + 48, 943, "DATE CHECK", 11, (255, 255, 255), align="center")
+    draw_text(cv, X0 + 48, 954, "left out on purpose", 7, (255, 255, 255),
               align="center")
     dc = ("Every story here happened, or was first reported, on Saturday "
-          "21 November 2026 in some time zone; clock times are UTC. Left "
-          "out on purpose: Fri 20 Nov: Russian missiles land in Poland · "
-          "Denmark expels Russian attaché · Wall Street tech sell-off · "
-          "GTA VI sales record. Sun 22 Nov: Verstappen wins Las Vegas GP · "
-          "new COP31 draft · India declare at 720–9. Not yet: COP31 "
-          "approval session (Sun 06:00 GMT) · Las Vegas GP race "
-          "(Sun 04:00 UTC).")
+          "21 November 2026 in some time zone; clock times are UTC. Friday "
+          "20 news, not shown: Russian missiles landing in Poland · Wall "
+          "Street's AI-rout correction · the Kryvyi Rih double-tap strike · "
+          "Kyiv's bridges barrage · Virginia's measles death · Cyclone "
+          "Akvan's landfall · Alcaraz's group sweep. Thursday 19: NASA's "
+          "Mars craft pausing science. Not yet: COP31's closing session "
+          "(Sunday 22).")
     for j, ln in enumerate(wrap_text(dc, 9.5, X1 - X0 - 110)):
-        draw_text(cv, X0 + 106, 958 + j * 14, ln, 9.5, INK)
+        draw_text(cv, X0 + 106, 936 + j * 13, ln, 9.5, INK)
 
-    # ---- HOW SURE + footer
-    draw_text(cv, X0, 996,
-              "HOW SURE:  ◆ CONFIRMED 2+ major outlets  ● OFFICIAL on the "
-              "record, agency, ministry, federation  ○ REPORTED one major "
-              "outlet  ◇ CLAIM one side says", 9, (90, 80, 66))
-    draw_text(cv, 512, 1010,
-              "Pictures and map drawn in code · claims attributed · figures "
-              "as first reported. Sources: USGS, UKMTO, AFP, Reuters, AP, "
-              "BBC, PBS, Al Jazeera, DW, ESA, CAF, Taiwan MND, Coinbase",
+    # ---- footer (Reference A text, copied exactly)
+    draw_text(cv, 512, 978,
+              "Pictures and map drawn in code, not photographs · claims "
+              "attributed · figures as first reported. Sources: USGS, UKMTO, "
+              "AFP, Reuters, AP, France 24, PBS, Al Jazeera, ESA, Euronews, "
+              "Kyodo, ABC",
               9, (90, 80, 66), align="center")
-    cv.hline(X0, X1, 1018, INK, 2)
+    cv.hline(X0, X1, 998, INK, 2)
 
     out = os.environ.get("MAKEFUN_OUTPUT_DIR", "out")
     os.makedirs(out, exist_ok=True)
@@ -792,20 +846,20 @@ REG_COL = {"Europe": (46, 90, 136), "Middle East": (178, 32, 26),
 BADGE_COL = {"CONFIRMED": (46, 122, 62), "OFFICIAL": (46, 90, 136),
              "REPORTED": (120, 114, 100), "CLAIM": (178, 32, 26)}
 
-def fit_size(s, maxsize, maxw):
+def fit_size(s, maxsize, maxw, font=None):
     lo, hi = 4.0, float(maxsize)
     for _ in range(24):
         mid = (lo + hi) / 2
-        if text_width(s, mid) <= maxw:
+        if text_width(s, mid, font) <= maxw:
             lo = mid
         else:
             hi = mid
     return lo
 
-def draw_fit(cv, s, x0, x1, y, maxsize, color, shear=0.0, minsize=6.0):
-    size = fit_size(s, maxsize, x1 - x0)
+def draw_fit(cv, s, x0, x1, y, maxsize, color, shear=0.0, minsize=6.0, font=None):
+    size = fit_size(s, maxsize, x1 - x0, font)
     size = max(size, minsize)
-    draw_text(cv, (x0 + x1) / 2, y, s, size, color, align="center", shear=shear)
+    draw_text(cv, (x0 + x1) / 2, y, s, size, color, align="center", shear=shear, font=font)
     return size
 
 def badge(cv, x, y, text, bg):
@@ -863,7 +917,8 @@ def draw_bahrain(cv, x0, y0, x1, y1):
     draw_text(cv, x0 + 150, y0 + 58, "QATAR", 7, (90, 80, 66))
     draw_text(cv, x0 + 250, y0 + 70, "U.A.E.", 7, (90, 80, 66))
     draw_text(cv, x0 + 250, y0 + 82, "OMAN", 7, (90, 80, 66))
-    draw_text(cv, x0 + 8, y0 + 44, "BAHRAIN", 8, (140, 22, 18))
+    cv.rect(x0 + 4, y0 + 36, x0 + 54, y0 + 48, RED)
+    draw_text(cv, x0 + 29, y0 + 45, "BAHRAIN", 8, (255, 255, 255), align="center")
     # Bahrain island + blast
     bx, by = x0 + 118, y0 + 48
     cv.ellipse(bx, by, 10, 6, (232, 217, 184))
@@ -876,8 +931,10 @@ def draw_bahrain(cv, x0, y0, x1, y1):
     dashed(cv, x0 + 262, y0 + 34, bx + 16, by + 2, RED)
     draw_text(cv, x0 + 196, y0 + 14, "STRAIT OF HORMUZ", 7, (60, 60, 60))
     draw_text(cv, x0 + 8, y0 + 74, "THE GULF", 7, (60, 60, 60))
-    draw_text(cv, x0 + 52, y0 + 64, "SITE ON FIRE", 7, RED)
-    draw_text(cv, x0 + 224, y0 + 48, "TANKER HIT", 7, RED)
+    cv.rect(x0 + 46, y0 + 56, x0 + 116, y0 + 68, RED)
+    draw_text(cv, x0 + 81, y0 + 65, "SITE ON FIRE", 7, (255, 255, 255), align="center")
+    cv.rect(x0 + 218, y0 + 40, x0 + 282, y0 + 52, RED)
+    draw_text(cv, x0 + 250, y0 + 49, "TANKER HIT", 7, (255, 255, 255), align="center")
 
 def draw_mexico(cv, x0, y0, x1, y1):
     # Gulf of California (left) + Pacific (bottom-left), Mexico in tan
@@ -905,10 +962,12 @@ def draw_mexico(cv, x0, y0, x1, y1):
     gx, gy = x0 + 62, y0 + 44
     cv.circle(gx, gy, 3, RED)
     star(cv, gx, gy, 9, RED)
-    draw_text(cv, gx + 12, gy + 3, "GUASAVE", 8, RED)
+    draw_text(cv, gx + 16, gy + 3, "GUASAVE", 8, RED)
     # right column: FBI TOP TEN / CAPTURED / 11 DEAD
     cv.rect(x0 + 214, y0 + 26, x0 + 310, y0 + 42, INK)
-    draw_text(cv, x0 + 262, y0 + 38, "FBI TOP TEN", 9, (255, 255, 255),
+    cv.circle(x0 + 230, y0 + 34, 5, (150, 148, 142))
+    cv.rect(x0 + 221, y0 + 39, x0 + 239, y0 + 42, (150, 148, 142))
+    draw_text(cv, x0 + 274, y0 + 38, "FBI TOP TEN", 9, (255, 255, 255),
               align="center")
     cv.rect(x0 + 214, y0 + 46, x0 + 310, y0 + 62, RED)
     draw_text(cv, x0 + 262, y0 + 58, "CAPTURED", 10, (255, 255, 255),
@@ -961,7 +1020,7 @@ def draw_cop31(cv, x0, y0, x1, y1):
     draw_text(cv, x0 + 8, y0 + 40, "ANTALYA · UN CLIMATE SUMMIT", 7, (255, 255, 255))
     for i in range(5):
         cv.rect(x0 + 8 + i * 14, y0 + 48, x0 + 18 + i * 14, y0 + 56, (255, 255, 255))
-    draw_text(cv, x0 + 8, y1 - 8, "talks paused for the night", 8, (90, 80, 66))
+    # (Reference A: no caption line under the calendar)
     # calendar: 16-21 Nov, Sat 21 in overtime (Reference A)
     px0, py0 = x0 + 118, y0
     cv.rect(px0, py0, px0 + 92, py0 + 62, (255, 255, 255))
@@ -976,7 +1035,7 @@ def draw_cop31(cv, x0, y0, x1, y1):
         else:
             draw_text(cv, cx + 6, py0 + 30, str(d), 9, INK, align="center")
     draw_text(cv, px0 + 6, py0 + 48, "SAT 21 · OVERTIME", 8, RED)
-    draw_text(cv, px0 + 6, py0 + 58, "NO DEAL YET", 8, RED)
+    draw_text(cv, px0 + 6, py0 + 58, "PLANNED END", 7, (90, 80, 66))
     # clock
     cx, cy = x1 - 44, y0 + 30
     cv.circle(cx, cy, 26, (255, 255, 255))
@@ -1058,10 +1117,10 @@ def pic(cv, x, y, w, h, code):
         draw_text(cv, x + w - 8, y + 26, "4 DEAD", 13, RED, align="right")
     elif code == "dengue":
         cv.rect(x, y, x + w, y + h, (246, 240, 224))
-        # bars: before (tall) / after (short) = cases down 71% (NEJM)
+        # bars: before (tall) / after (short) = cases down 69% (Reference A)
         cv.rect(x + 16, y + 6, x + 30, y + 30, (178, 32, 26))
         cv.rect(x + 38, y + 23, x + 52, y + 30, (46, 122, 62))
-        draw_text(cv, x + w - 8, y + 26, "-71%", 16, RED, align="right")
+        draw_text(cv, x + w - 8, y + 26, "-69%", 16, RED, align="right")
     elif code == "jets":
         cv.rect(x, y, x + w, y + h, (191, 217, 232))
         # median line (dashed) + jets crossing it
@@ -1133,35 +1192,33 @@ def world_map(cv, x0, y0, x1, y1):
             (-5, 50, REG_COL["Europe"]), (145, -38, REG_COL["Oceania"]),
             (131, -12, REG_COL["Oceania"]), (175, -41, REG_COL["Oceania"])]:
         pin(lon, lat, 0, col, big=False)
-    cv.rect(x0 + 6, y1 - 24, x0 + 134, y1 - 6, (24, 28, 40))
-    draw_text(cv, x0 + 10, y1 - 10, "MERCURY  9 · in orbit 18:24", 8,
-              (255, 255, 255))
+    # (Reference A map carries no caption box)
 
 TICKER = [
-    (14, "France: 144 held at cost marches (AFP)", "Europe"),
-    (15, "Kyiv: UK deal to build drones (UK MOD)", "Europe"),
-    (16, "London: England 37, All Blacks 12 (BBC)", "Europe"),
-    (17, "Dublin: Ireland beat SA 20–17 (BBC)", "Europe"),
-    (18, "Turin: Alcaraz beats Shelton (BBC)", "Europe"),
-    (19, "Riyadh: 3 Houthi missiles downed (AJ)", "Middle East"),
-    (20, "Hormuz: Iran claims US drone kill (AJ)", "Middle East"),
-    (21, "Gaza: Food vehicle hit, 3 dead (REUTERS)", "Middle East"),
-    (22, "Beirut: Aoun: pull-out, Iran out (AJ)", "Middle East"),
-    (23, "Brussels: EU budget 204bn, tech tax (DW)", "Europe"),
-    (24, "Fukushima: Snow isolates 1,400 (XINHUA)", "East Asia"),
-    (25, "Serang: Fire kills 3, 36 missing (BBC)", "SE Asia"),
-    (26, "Hanoi: Land-seizure law speeds up (REUTERS)", "SE Asia"),
-    (27, "Bangladesh: Measles toll hits 1,343 (DGHS)", "South Asia"),
-    (28, "Niger: Village head killed in raid (TRUST)", "Africa"),
-    (29, "Uganda: $3bn rail deal 'off' (MUHOOZI)", "Africa"),
-    (30, "Abuja: Kiswahili made official (CAF)", "Africa"),
-    (31, "US: Trump backs 10% card cap (AP)", "N. America"),
-    (32, "US: Trump: FBI hack 'not good' (AP)", "N. America"),
-    (33, "Brasilia: Bolsonaro in intensive care (AJ)", "Latin Am."),
-    (34, "Cornwall: Peter Fluck dies at 85 (BBC)", "Europe"),
-    (35, "Melbourne: Australia beat England (BBC)", "Oceania"),
-    (36, "Darwin: M6.8 Timor quake felt (USGS)", "Oceania"),
-    (37, "Wellington: India 486–4, lead by 118 (AFP)", "Oceania"),
+    (14, "Paris: 144 held at cost marches", "Europe"),
+    (15, "Kyiv: UK deal to build drones", "Europe"),
+    (16, "London: England 37, All Blacks 12", "Europe"),
+    (17, "Dublin: Ireland beat SA 20–17", "Europe"),
+    (18, "Turin: Alcaraz beats Shelton", "Europe"),
+    (19, "Riyadh: 3 Houthi missiles downed", "Middle East"),
+    (20, "Hormuz: Iran claims US drone kill", "Middle East"),
+    (21, "Gaza: 4 killed, rescuers say", "Middle East"),
+    (22, "Beirut: Aoun: arms for state only", "Middle East"),
+    (23, "Taipei: short-selling curbed", "East Asia"),
+    (24, "Fukushima: snow traps ~1,400", "East Asia"),
+    (25, "Patna: Modi opens Ganges bridge", "South Asia"),
+    (26, "Ladakh: local polls, 70% turnout", "South Asia"),
+    (27, "Dhaka: measles toll hits 1,343", "South Asia"),
+    (28, "Niger State: 5 killed in village raid", "Africa"),
+    (29, "Uganda: $3bn rail deal \"off\"", "Africa"),
+    (30, "Doha: Cameroon U17s lose 2-1", "Middle East"),
+    (31, "US: Trump backs 10% card cap", "N. America"),
+    (32, "US: Trump: FBI hack \"not good\"", "N. America"),
+    (33, "Brasilia: Bolsonaro moved to ICU", "Latin Am."),
+    (34, "Halifax: Taiwan warns Canada", "N. America"),
+    (35, "Melbourne: Australia beat England", "Oceania"),
+    (36, "Darwin: M6.8 Timor quake felt", "Oceania"),
+    (37, "Wellington: India 486/4 v NZ", "Oceania"),
 ]
 
 if __name__ == "__main__":
